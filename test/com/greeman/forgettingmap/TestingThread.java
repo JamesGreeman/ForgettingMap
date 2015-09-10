@@ -5,9 +5,6 @@
  */
 package com.greeman.forgettingmap;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Random;
 
 /**
@@ -15,12 +12,14 @@ import java.util.Random;
  * @author jgreeman
  */
 public class TestingThread extends Thread{
-    private ForgettingMap<Integer, String> instance;
+    private final ForgettingMap<Integer, String> instance;
+    private final Object lock;
     private final Random r    =   new Random();
     private boolean finished    =   false;
 
-    public TestingThread(ForgettingMap<Integer, String> instance) {
-        this.instance = instance;
+    public TestingThread(ForgettingMap<Integer, String> instance, Object lock) {
+        this.instance   =   instance;
+        this.lock       =   lock;
     }
 
     public boolean isFinished() {
@@ -32,9 +31,10 @@ public class TestingThread extends Thread{
         for (int i = 0; i < 10000; i++){
             instance.add(r.nextInt(100) + 1, "bad value");
         }
-        instance.remove(30);
-        instance.add(101, "good value");
-        instance.add(41, "good value");
+        synchronized(lock){
+            instance.remove(30);
+            instance.add(41, "good value");
+        }
         finished    =   true;
     }
     

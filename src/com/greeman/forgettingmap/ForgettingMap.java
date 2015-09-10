@@ -1,13 +1,8 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.greeman.forgettingmap;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * The ForgettingMap class will store unique associations between two types specified on declaration.
@@ -17,10 +12,9 @@ import java.util.List;
  * Will take an int for maximum size on construction, if this size is reached new items will replace the least used item.
  */
 public class ForgettingMap<K,V> {
-    private final List<K>       keys        =   new ArrayList<>();
-    private final List<V>       values      =   new ArrayList<>();
-    private final List<Integer> accessCount =   new ArrayList<>();
-    private final int           maxSize;
+    private final Map<K, V>         values      =   new HashMap<>();
+    private final Map<K, Integer>   accessCount =   new HashMap<>();
+    private final int               maxSize;
     
     /**
      * Constructor for ForgettingMap
@@ -39,19 +33,13 @@ public class ForgettingMap<K,V> {
      * finally the new values are added
      */
     public void add(K key, V value){
-        //try to remove existing key
-        remove(key);
         synchronized(this){
-            // if at max size remove least accessed
-            if (size() >= maxSize){
-                // Collections.min() will find the lowest number in a list, index of will find the first index of that number 
-                // this index will represent the first item added with the lowest access count
-                int index   =   accessCount.indexOf(Collections.min(accessCount));
-                removeIndex(index);
-            }
-            keys.add(key);
-            values.add(value);
-            accessCount.add(0);
+            //try to remove existing key
+            if (size() >= maxSize && !values.containsKey(key)){
+                removeLeastAccessed();
+            } 
+            values.put(key, value);
+            accessCount.put(key, 0);
         }
     }
     /**
@@ -61,30 +49,45 @@ public class ForgettingMap<K,V> {
      */
     public V find(K key){
         synchronized(this){
-            int index   =   keys.indexOf(key);
-            if (index != -1){
-                accessCount.set(index, accessCount.get(index) + 1);
-                return values.get(index);
+            if (values.containsKey(key)){
+                accessCount.put(key, accessCount.get(key) + 1);
+                return values.get(key);
             } else {
                 return null;
             }
         }
     }
     
-    /**
-     * method to remove a key
-     * @param key key to be removed
-     * removes a key and value and count if the key exists
-     */
-    public void remove(K key){
+    public void removeLeastAccessed(){
         synchronized(this){
-            int index = keys.indexOf(key);
-            //if key exists
-            if (index != -1){
-                removeIndex(index);
+            K toRemove  =   getLeastAccessed();
+            if (toRemove != null){
+                values.remove(toRemove);
+                accessCount.remove(toRemove);
             }
         }
     }
+    
+    public K getLeastAccessed(){
+        synchronized(this){
+            K key   =   null;
+            Integer minimum =   Integer.MAX_VALUE;
+            for (Entry<K, Integer> entry : accessCount.entrySet()){
+                if (minimum.compareTo(entry.getValue()) > 0){
+                    key     =   entry.getKey();
+                    minimum =   entry.getValue();
+                }
+            }
+            return key;
+        }
+    }
+    public void remove(K key){
+        synchronized(this){
+            values.remove(key);
+            accessCount.remove(key);
+        }        
+    }
+    
     /**
      * method to get the size of the map
      * @return the size
@@ -92,26 +95,13 @@ public class ForgettingMap<K,V> {
      */
     public int size() throws BadSizeException{
         synchronized(this){
-            if (keys.size() != values.size() || keys.size() != accessCount.size()){
-                throw new BadSizeException("keys size (" + keys.size() + ") values size (" + values.size() + ") sccessCount size (" + accessCount.size() + ") do not match");
+            if (accessCount.size() != values.size()){
+                throw new BadSizeException("values size (" + values.size() + ") accessCount size (" + accessCount.size() + ") do not match");
             }
-            if (keys.size() > maxSize){
-                throw new BadSizeException("The size of this map (" + keys.size() + ") has exceeded the maximum size (" + maxSize + ")");
+            if (values.size() > maxSize){
+                throw new BadSizeException("The size of this map (" + values.size() + ") has exceeded the maximum size (" + maxSize + ")");
             }
-            return keys.size();
+            return values.size();
         }
     }
-    
-    /**
-     * private method to remove a specific indexed item from all lists
-     * @param i index to be removed
-     * removes the key, value and access count for a specified index.
-     * This method is not protected and should not be used by other methods.
-     */
-    private void removeIndex(int i){
-        keys.remove(i);
-        values.remove(i);
-        accessCount.remove(i);
-    }
-    
 }

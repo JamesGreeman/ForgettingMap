@@ -152,11 +152,12 @@ public class ForgettingMapTest {
      */
     @Test
     public void testThreading() throws InterruptedException{
-        ForgettingMap<Integer, String> instance   =   new ForgettingMap<>(100);
-        TestingThread thread1   =   new TestingThread(instance);
-        TestingThread thread2   =   new TestingThread(instance);
-        TestingThread thread3   =   new TestingThread(instance);
-        TestingThread thread4   =   new TestingThread(instance);
+        ForgettingMap<Integer, String> instance =   new ForgettingMap<>(100);
+        Object lock                             =   new Object();
+        TestingThread thread1   =   new TestingThread(instance, lock);
+        TestingThread thread2   =   new TestingThread(instance, lock);
+        TestingThread thread3   =   new TestingThread(instance, lock);
+        TestingThread thread4   =   new TestingThread(instance, lock);
         
         thread1.start();
         thread2.start();
@@ -168,8 +169,9 @@ public class ForgettingMapTest {
             Thread.sleep(1000);
         }
         
-        for (int i = 1; i <= 101; i++){
-            if (i == 101 || i == 41){
+        for (int i = 1; i <= 100; i++){
+            System.out.println(i);
+            if (i == 41){
                 Assert.assertEquals("good value", instance.find(i));                
             } else if (i == 30){
                 Assert.assertEquals(null, instance.find(i));                    
