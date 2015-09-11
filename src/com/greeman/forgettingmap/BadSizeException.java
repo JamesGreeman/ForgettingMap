@@ -6,7 +6,7 @@
 package com.greeman.forgettingmap;
 
 /**
- *
+ * Exception to be used when there is an invalid size in an object
  * @author jgreeman
  */
 public class BadSizeException extends RuntimeException{

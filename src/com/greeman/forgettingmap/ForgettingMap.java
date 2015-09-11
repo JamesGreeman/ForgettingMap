@@ -1,7 +1,6 @@
 package com.greeman.forgettingmap;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 
 /**
@@ -17,7 +16,7 @@ public class ForgettingMap<K,V> {
     
     /**
      * Constructor for ForgettingMap.
-     * @param maxSize the maximum size this map can be
+     * @param maxSize maximum size this map can be
      */
     public ForgettingMap(int maxSize) {
         this.maxSize = maxSize;
@@ -25,9 +24,8 @@ public class ForgettingMap<K,V> {
     
     /**
      * Adds a new association to the map.
-     * If the map is full and does not contain the key being added the least accessed
-     * element is removed.  Regardless of this the new value is added under the key
-     * and an access count of 0 is set for the key.
+     * If the map is full and does not contain the key being added the least accessed element is removed.  Regardless of
+     * this the new value is added under the key and an access count of 0 is set for the key.
      * @param key key to be added
      * @param value value to be added
      */
@@ -43,8 +41,7 @@ public class ForgettingMap<K,V> {
     }
     /**
      * Returns the value corresponding to a given key.
-     * If the map contains the key the access count is incremented and the value
-     * is returned, otherwise null is returned
+     * If the map contains the key the access count is incremented and the value is returned, otherwise null is returned
      * @param key to be found
      * @return corresponding value if exists else null
      */
@@ -73,18 +70,15 @@ public class ForgettingMap<K,V> {
     
     /**
      * Returns the key that has been accessed the least.
-     * Checks each entry in the access count, storing the smallest element.
+     * Gets a sorted list of keys and if the list isn't empty returns the first key (corresponding to smallest value)
      * @return key corresponding to smallest element
      */
     private K getLeastAccessed(){
         synchronized(this){
+            List<K> sortedKeys  =   getSortedKeys();
             K key   =   null;
-            Integer minimum =   Integer.MAX_VALUE;
-            for (Entry<K, Integer> entry : accessCount.entrySet()){
-                if (minimum.compareTo(entry.getValue()) > 0){
-                    key     =   entry.getKey();
-                    minimum =   entry.getValue();
-                }
+            if (!sortedKeys.isEmpty()) {
+                key = getSortedKeys().get(0);
             }
             return key;
         }
@@ -104,11 +98,10 @@ public class ForgettingMap<K,V> {
     
     /**
      * Returns the size of the map.
-     * The method will check the size of internal data structures are in line and
-     * that the maximum size parameter has not been exceeded.  If it either of these
-     * are in error then a BadSizeException is throw.  Otherwise the size of the values
-     * map is returned.
-     * @return the size of values map
+     * The method will check the size of internal data structures are in line and that the maximum size parameter has
+     * not been exceeded.  If it either of these are in error then a BadSizeException is throw.  Otherwise the size of
+     * the values map is returned.
+     * @return size of values map
      */
     public int size() throws BadSizeException{
         synchronized(this){
@@ -119,6 +112,25 @@ public class ForgettingMap<K,V> {
                 throw new BadSizeException("The size of this map (" + values.size() + ") has exceeded the maximum size (" + maxSize + ")");
             }
             return values.size();
+        }
+    }
+
+    /**
+     * Returns a sorted list of keys based on the current access count.
+     * Uses a custom (lambda) comparator to compare entries in the access count map.  The keys are then added to a list
+     * in order, creating the returned list of keys representing the access count in ascending order.
+     * @return sorted list of keys
+     */
+    private List<K> getSortedKeys() {
+        synchronized (this) {
+            List<Entry<K, Integer>> list = new LinkedList<>(accessCount.entrySet());
+            Collections.sort(list, (o1, o2) -> (o1.getValue()).compareTo(o2.getValue()));
+
+            List<K> result = new ArrayList<>();
+            for (Entry<K, Integer> entry : list) {
+                result.add(entry.getKey());
+            }
+            return result;
         }
     }
 }
